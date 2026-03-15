@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arriving in Germany — Production Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f0e8; --card: #fff; --ink: #1a1a18; --muted: #7a7870;
+  --border: #e0dbd0; --gold: #b8860b; --gold-light: #f0c040;
+  --green: #1D9E75; --green-bg: #E1F5EE; --green-dk: #085041;
+  --purple: #534AB7; --purple-bg: #EEEDFE; --purple-dk: #3C3489;
+  --amber: #BA7517; --amber-bg: #FAEEDA; --amber-dk: #633806;
+  --coral: #993C1D; --coral-bg: #FAECE7; --coral-dk: #712B13;
+  --blue: #185FA5; --blue-bg: #E6F1FB; --blue-dk: #0C447C;
+  --gray-bg: #F1EFE8; --gray-dk: #444441;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+/* ── NAV ── */
+.nav { background: var(--ink); padding: 14px 32px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; }
+.nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; color: var(--gold-light); letter-spacing: -0.3px; }
+.nav-subtitle { font-size: 12px; color: #888; }
+.nav-tabs { margin-left: auto; display: flex; gap: 4px; }
+.nav-tab { padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; color: #aaa; transition: all .15s; border: none; background: none; font-family: 'DM Sans', sans-serif; }
+.nav-tab:hover { color: white; }
+.nav-tab.active { background: rgba(255,255,255,.1); color: white; }
+
+/* ── LAYOUT ── */
+.page { display: none; padding: 36px 24px 80px; max-width: 820px; margin: 0 auto; }
+.page.active { display: block; }
+
+.page-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.page-eyebrow::before { content: ''; width: 16px; height: 1px; background: var(--muted); display: inline-block; }
+h1 { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -1px; margin-bottom: 6px; }
+h2 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: -0.3px; margin-bottom: 12px; }
+.lead { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 32px; max-width: 600px; }
+
+/* ── CARDS ── */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px 24px; margin-bottom: 14px; }
+.card-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 14px; }
+
+/* ── SPRINT TABLE ── */
+.sprint-wrap { overflow-x: auto; margin-bottom: 14px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: var(--ink); color: white; padding: 10px 14px; text-align: left; font-weight: 500; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+thead th:first-child { border-radius: 8px 0 0 0; }
+thead th:last-child { border-radius: 0 8px 0 0; }
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:last-child { border-bottom: none; }
+tbody td { padding: 10px 14px; vertical-align: top; line-height: 1.5; }
+tbody tr:nth-child(even) { background: #faf9f6; }
+.week-cell { font-weight: 500; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.task-cell { color: var(--ink); }
+.task-cell ul { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.task-cell ul li::before { content: '–  '; color: var(--muted); }
+.milestone-cell { }
+.m-badge {
+  display: inline-block; border-radius: 6px; padding: 3px 10px;
+  font-size: 11px; font-weight: 500; white-space: nowrap;
+}
+.m-green { background: var(--green-bg); color: var(--green-dk); }
+.m-purple { background: var(--purple-bg); color: var(--purple-dk); }
+.m-amber { background: var(--amber-bg); color: var(--amber-dk); }
+.m-blue { background: var(--blue-bg); color: var(--blue-dk); }
+.m-coral { background: var(--coral-bg); color: var(--coral-dk); }
+.m-gray { background: var(--gray-bg); color: var(--gray-dk); }
+
+/* ── TIMELINE ── */
+.timeline { }
+.tl-item { display: grid; grid-template-columns: 100px 1fr; gap: 0 20px; margin-bottom: 0; }
+.tl-left { text-align: right; padding-top: 16px; }
+.tl-month { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); line-height: 1.3; }
+.tl-right { border-left: 2px solid var(--border); padding: 0 0 24px 22px; position: relative; }
+.tl-item:last-child .tl-right { border-left-color: transparent; }
+.tl-dot { position: absolute; left: -7px; top: 18px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--card); }
+.tl-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; cursor: default; }
+.tl-title { font-weight: 500; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.tl-badge { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; border-radius: 100px; padding: 2px 9px; }
+.tl-deliverables { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.tl-tag { font-size: 11px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; color: var(--muted); }
+.tl-milestone { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; padding-top: 8px; border-top: 1px solid var(--border); }
+.tl-milestone::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+
+/* ── GAME LOOP ── */
+.loop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.loop-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+.loop-num { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--border); margin-bottom: 6px; line-height: 1; }
+.loop-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.loop-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* ── PROGRESS EVIDENCE ── */
+.evidence-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ev-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+.ev-icon { font-size: 22px; margin-bottom: 8px; }
+.ev-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.ev-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.ev-link { font-size: 12px; color: var(--blue); text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+.ev-link:hover { text-decoration: underline; }
+.ev-tag { display: inline-block; font-size: 10px; font-weight: 500; background: var(--green-bg); color: var(--green-dk); border-radius: 4px; padding: 2px 7px; }
+
+/* ── TALK TRACK ── */
+.talk-section { margin-bottom: 28px; }
+.talk-section h3 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.talk-time { font-size: 11px; font-weight: 500; background: var(--ink); color: white; border-radius: 100px; padding: 2px 9px; font-family: 'DM Sans', sans-serif; }
+.talk-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+.talk-line { font-size: 13px; line-height: 1.7; color: var(--ink); margin-bottom: 8px; padding-left: 14px; position: relative; }
+.talk-line::before { content: '›'; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
+.talk-line:last-child { margin-bottom: 0; }
+.talk-tip { background: var(--amber-bg); border: 1px solid #f5d48a; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--amber-dk); margin-top: 8px; line-height: 1.6; }
+.talk-tip strong { font-weight: 500; }
+
+/* ── HERO BLOCK ── */
+.hero-block { background: var(--ink); border-radius: 16px; padding: 28px 28px 24px; margin-bottom: 28px; color: white; }
+.hero-block h1 { color: var(--gold-light); }
+.hero-block .lead { color: #b0aca6; margin-bottom: 0; }
+.hero-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.hero-pill { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #c8c4be; }
+
+/* ── STATUS CHIPS ── */
+.status-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.status-chip { border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 500; }
+.chip-done { background: var(--green-bg); color: var(--green-dk); }
+.chip-active { background: var(--amber-bg); color: var(--amber-dk); }
+.chip-next { background: var(--gray-bg); color: var(--gray-dk); }
+
+/* ── MECHANIC TABS ── */
+.mech-tab { padding: 6px 15px; border-radius: 7px; border: 1px solid var(--border); background: white; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--muted); transition: all .15s; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
+.mech-tab:hover { color: var(--ink); border-color: var(--ink); }
+.mech-tab.active { background: var(--ink); color: white; border-color: var(--ink); }
+.mech-panel { display: none; }
+.mech-panel.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div>
+    <div class="nav-logo">Arriving in Germany</div>
+    <div class="nav-subtitle">Production Pipeline · March 2026</div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('pipeline')">Roadmap</button>
+    <button class="nav-tab" onclick="showPage('gameloop')">Game loop</button>
+    <button class="nav-tab" onclick="showPage('progress')">Progress</button>
+
+  </div>
+</div>
+
+<!-- ══ PAGE 1 & 2 MERGED: ROADMAP ══ -->
+<div class="page active" id="page-pipeline">
+  <div class="page-eyebrow">Project roadmap</div>
+  <h1>March – August 2026</h1>
+  <p class="lead">Three parallel workstreams running across 6 months — game development, primary research with migrants, and learning design grounded in pedagogy. These are not sequential; they inform each other throughout.</p>
+
+  <!-- Status chips -->
+  <div class="status-row">
+    <div class="status-chip chip-done">✓ Month 1 — Prototype built and deployed</div>
+    <div class="status-chip chip-active">→ Now: Research + interaction depth</div>
+    <div class="status-chip chip-next">Next: Pedagogy framework finalised</div>
+  </div>
+
+  <!-- Workstream legend -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px">
+    <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)"><span style="width:12px;height:12px;border-radius:3px;background:var(--green);display:inline-block"></span>Game development</div>
+    <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)"><span style="width:12px;height:12px;border-radius:3px;background:var(--purple);display:inline-block"></span>Research &amp; content</div>
+    <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)"><span style="width:12px;height:12px;border-radius:3px;background:var(--blue);display:inline-block"></span>Pedagogy &amp; learning design</div>
+  </div>
+
+  <!-- ── PHASE 1 ── -->
+  <div class="tl-item">
+    <div class="tl-left"><div class="tl-month">Month 1<br>Feb–Mar<br><span style="color:var(--green);font-size:10px;font-weight:600">DONE</span></div></div>
+    <div class="tl-right">
+      <div class="tl-dot" style="background:var(--green)"></div>
+      <div class="tl-card">
+        <div class="tl-title">Foundation — prototype, literature, initial framework</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block"></span>Game</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Playable prototype with 3 scenes, score tracking, and NPC conversation deployed on GitHub Pages.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--purple);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--purple);display:inline-block"></span>Research</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Initial desk research on migrant cultural adjustment challenges. Review of existing onboarding tools and their failure points.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--blue);display:inline-block"></span>Pedagogy</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Identified core frameworks: Kolb's experiential learning cycle, situated learning theory, and Vygotsky's zone of proximal development as guiding principles.</div>
+          </div>
+        </div>
+        <div class="tl-milestone" style="margin-top:12px">Milestone: Working demo live · Theoretical grounding identified</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE 2 ── -->
+  <div class="tl-item">
+    <div class="tl-left"><div class="tl-month">Month 2<br>Mar–Apr<br><span style="color:var(--amber);font-size:10px;font-weight:600">NOW</span></div></div>
+    <div class="tl-right">
+      <div class="tl-dot" style="background:var(--amber)"></div>
+      <div class="tl-card">
+        <div class="tl-title">Depth — interaction design, first interviews, pedagogy draft</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block"></span>Game</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Map exploration with clickable Frankfurt districts. Drag-and-drop recycling scene. Ticket machine mini-game. Character role selection at start.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--purple);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--purple);display:inline-block"></span>Research</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">First round of semi-structured interviews: 6–8 migrants who moved to Germany in the last 3 years. Focus on first-week experiences, unexpected rules, social missteps.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--blue);display:inline-block"></span>Pedagogy</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Draft learning design document. Define how failure, retry, and feedback loops map to Kolb's cycle. Establish what "cultural readiness" means measurably.</div>
+          </div>
+        </div>
+        <div style="background:#faf9f6;border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px">
+          <div style="font-size:11px;font-weight:500;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Weekly sprints</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+            <div style="font-size:11px;line-height:1.6"><strong style="display:block;color:var(--ink);margin-bottom:2px">W1 · Mar 16–22</strong><span style="color:var(--muted)">Mentor feedback review. Deploy live NPC with real API. Draft interview guide for migrant research.</span></div>
+            <div style="font-size:11px;line-height:1.6"><strong style="display:block;color:var(--ink);margin-bottom:2px">W2 · Mar 23–29</strong><span style="color:var(--muted)">Map screen built. First 3 migrant interviews conducted. Review Kolb + situated learning literature.</span></div>
+            <div style="font-size:11px;line-height:1.6"><strong style="display:block;color:var(--ink);margin-bottom:2px">W3 · Mar 30–Apr 5</strong><span style="color:var(--muted)">Ticket machine and drag-drop scenes live. 3 more interviews. Begin thematic coding of interview data.</span></div>
+            <div style="font-size:11px;line-height:1.6"><strong style="display:block;color:var(--ink);margin-bottom:2px">W4 · Apr 6–12</strong><span style="color:var(--muted)">Character role selection. Internal playtest session. Pedagogy document draft 1 written.</span></div>
+          </div>
+        </div>
+        <div class="tl-milestone" style="margin-top:12px">Milestone: 4 interaction types live · 6–8 interviews done · Pedagogy draft 1 complete</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE 3 ── -->
+  <div class="tl-item">
+    <div class="tl-left"><div class="tl-month">Month 3<br>Apr–May</div></div>
+    <div class="tl-right">
+      <div class="tl-dot" style="background:var(--border)"></div>
+      <div class="tl-card">
+        <div class="tl-title">Evidence — interview findings drive content, pedagogy finalised</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block"></span>Game</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Scenes built from real interview findings — not invented. Nurse and engineer role paths begin to diverge. Adaptive difficulty added based on player score.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--purple);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--purple);display:inline-block"></span>Research</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Second interview round: 8–10 participants, this time including migration counsellors and HR staff from companies recruiting internationally. Cross-validate with first round findings.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--blue);display:inline-block"></span>Pedagogy</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Finalise the learning design framework. Define the five competency dimensions, how they are assessed, and what progression looks like. Have framework reviewed by an academic mentor.</div>
+          </div>
+        </div>
+        <div style="background:#faf9f6;border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px">
+          <div style="font-size:11px;font-weight:500;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Weekly sprints</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+            <div style="font-size:11px;line-height:1.6"><strong style="display:block;color:var(--ink);margin-bottom:2px">W5 · Apr 13–19</strong><span style="color:var(--muted)">Thematic analysis complete. 5 new scenes written from interview data. Adaptive scoring logic built.</span></div>
+            <div style="font-size:11px;line-height:1.6"><strong style="display:block;color:var(--ink);margin-bottom:2px">W6 · Apr 20–26</strong><span style="color:var(--muted)">Nurse/engineer paths diverge. Workplace etiquette and Bürgeramt scenes added. Second interview round begins.</span></div>
+            <div style="font-size:11px;line-height:1.6"><strong style="display:block;color:var(--ink);margin-bottom:2px">W7 · Apr 27–May 3</strong><span style="color:var(--muted)">Pedagogy framework reviewed and finalised. Competency dimensions formalised. Analytics dashboard built.</span></div>
+            <div style="font-size:11px;line-height:1.6"><strong style="display:block;color:var(--ink);margin-bottom:2px">W8 · May 4–10</strong><span style="color:var(--muted)">Second interview round complete. Content audit — map every scene to a learning objective from the framework.</span></div>
+          </div>
+        </div>
+        <div class="tl-milestone" style="margin-top:12px">Milestone: 10+ scenes grounded in research · Pedagogy framework finalised and reviewed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE 4 ── -->
+  <div class="tl-item">
+    <div class="tl-left"><div class="tl-month">Month 4<br>May–Jun</div></div>
+    <div class="tl-right">
+      <div class="tl-dot" style="background:var(--border)"></div>
+      <div class="tl-card">
+        <div class="tl-title">Polish — full session, validation, content completeness</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block"></span>Game</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Full 30-minute play session complete. Mobile layout. Accessibility improvements. Audio feedback cues. Session history so players can track progress across multiple playthroughs.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--purple);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--purple);display:inline-block"></span>Research</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Content validation: share scene scripts with 3–4 interview participants. Ask whether scenarios ring true. Revise based on feedback before pilot.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--blue);display:inline-block"></span>Pedagogy</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Map every scene and feedback moment to the finalised framework. Ensure the game is designed to teach, not just entertain. Write the rationale document for institutional partners.</div>
+          </div>
+        </div>
+        <div class="tl-milestone" style="margin-top:12px">Milestone: Full play session complete · All content validated by research participants</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE 5 ── -->
+  <div class="tl-item">
+    <div class="tl-left"><div class="tl-month">Month 5<br>Jun–Jul</div></div>
+    <div class="tl-right">
+      <div class="tl-dot" style="background:var(--border)"></div>
+      <div class="tl-card">
+        <div class="tl-title">Pilot — real users, real data, real feedback</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block"></span>Game</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Deploy to 10–20 users recruited through a migration institute or international employer. Collect session data, error patterns, drop-off points.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--purple);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--purple);display:inline-block"></span>Research</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Post-play interviews with pilot users. Did they learn something they didn't already know? Did it feel relevant to their actual situation? Would they recommend it before relocating?</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--blue);display:inline-block"></span>Pedagogy</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Test whether the competency scores predict actual user confidence. Check for construct validity — does a high social awareness score correlate with better performance in social scenarios?</div>
+          </div>
+        </div>
+        <div class="tl-milestone" style="margin-top:12px">Milestone: Pilot complete · Post-play data collected · Learning outcomes evaluated</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE 6 ── -->
+  <div class="tl-item">
+    <div class="tl-left"><div class="tl-month">Month 6<br>Jul–Aug</div></div>
+    <div class="tl-right">
+      <div class="tl-dot" style="background:var(--border)"></div>
+      <div class="tl-card">
+        <div class="tl-title">V1 — iterate, document, present findings</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block"></span>Game</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Fix issues identified in pilot. Shareable V1 ready for institutional rollout. Documentation for partners on how to use the tool and interpret player scores.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--purple);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--purple);display:inline-block"></span>Research</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Write the pilot findings report. Document what scenarios resonated, what missed, and what cultural blind spots the research uncovered for future content rounds.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:6px;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:var(--blue);display:inline-block"></span>Pedagogy</div>
+            <div style="font-size:12px;color:var(--ink);line-height:1.7">Present the full learning design rationale — what the game teaches, how it teaches it, and how that is measured. This is the academic case for the tool's validity.</div>
+          </div>
+        </div>
+        <div class="tl-milestone" style="margin-top:12px">Milestone: V1 released · Findings written up · Academic and institutional case documented</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pedagogy callout -->
+  <div class="card" style="background:var(--blue-bg);border-color:#b5d4f4;margin-top:8px">
+    <div class="card-label" style="color:var(--blue-dk)">The learning design question — why this matters to get right</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--blue-dk);margin-bottom:6px">What the research says</div>
+        <div style="font-size:13px;color:var(--blue);line-height:1.75">Cultural adjustment is not just about knowledge — it is about behaviour rehearsal. Kolb's experiential learning cycle shows that people retain and act on learning when they experience a situation, reflect on it, conceptualise the rule, and then experiment again. This is exactly the game loop: encounter → fail or succeed → cultural explanation → retry. The game is designed as applied learning theory, not just entertainment.</div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--blue-dk);margin-bottom:6px">What needs to be answered by Month 3</div>
+        <div style="font-size:13px;color:var(--blue);line-height:1.75">How do we define and measure "cultural readiness"? What does progression actually look like across sessions? How do we ensure the scenarios are proximal — challenging enough to stretch the player but not so foreign they disengage? These are the pedagogical questions that will determine whether this is a serious educational tool or just a quiz. The framework document produced in Month 3 is the answer to all of them.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ PAGE 3: GAME LOOP ══ -->
+<div class="page" id="page-gameloop">
+  <div class="page-eyebrow">Game design</div>
+  <h1>Game loop & mechanics</h1>
+  <p class="lead">Click each mechanic tab below to see an interactive mockup of how it works. Every mechanic is distinct — this is not a simple choice-based quiz.</p>
+
+  <!-- Stepper tabs -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px" id="mech-tabs">
+    <button class="mech-tab active" onclick="showMech(0,event)">Overview</button>
+    <button class="mech-tab" onclick="showMech(1,event)">Map & movement</button>
+    <button class="mech-tab" onclick="showMech(2,event)">NPC conversation</button>
+    <button class="mech-tab" onclick="showMech(3,event)">Drag & drop</button>
+    <button class="mech-tab" onclick="showMech(4,event)">Tap mini-game</button>
+    <button class="mech-tab" onclick="showMech(5,event)">Score & debrief</button>
+  </div>
+
+  <!-- ── PANEL 0: OVERVIEW ── -->
+  <div class="mech-panel active" id="mp0">
+    <!-- Loop flow -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-label">Core game loop</div>
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
+        <div style="background:#EEEDFE;color:#3C3489;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:500;flex:1;min-width:90px;text-align:center">1. Explore map</div>
+        <div style="color:var(--muted);font-size:16px">→</div>
+        <div style="background:#E1F5EE;color:#085041;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:500;flex:1;min-width:90px;text-align:center">2. Enter location</div>
+        <div style="color:var(--muted);font-size:16px">→</div>
+        <div style="background:#FAEEDA;color:#633806;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:500;flex:1;min-width:90px;text-align:center">3. Play mechanic</div>
+        <div style="color:var(--muted);font-size:16px">→</div>
+        <div style="background:#FAECE7;color:#712B13;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:500;flex:1;min-width:90px;text-align:center">4. Get feedback</div>
+        <div style="color:var(--muted);font-size:16px">→</div>
+        <div style="background:var(--ink);color:var(--gold-light);border-radius:8px;padding:10px 14px;font-size:13px;font-weight:500;flex:1;min-width:90px;text-align:center">5. AI debrief</div>
+      </div>
+    </div>
+    <!-- 6 mechanic cards -->
+    <div class="loop-grid">
+      <div class="loop-card" style="cursor:pointer;border-left:3px solid #534AB7" onclick="showMech(1,null)">
+        <div class="loop-num" style="color:#534AB7">01</div>
+        <div class="loop-title">Map & movement</div>
+        <div class="loop-desc">Click anywhere on real Frankfurt streets to walk. Tap location pins to enter. Hidden cultural facts appear as players explore. New districts unlock as score grows.</div>
+        <div style="margin-top:8px;font-size:11px;color:#534AB7;font-weight:500">Click to see interactive mockup →</div>
+      </div>
+      <div class="loop-card" style="cursor:pointer;border-left:3px solid #1D9E75" onclick="showMech(2,null)">
+        <div class="loop-num" style="color:#1D9E75">02</div>
+        <div class="loop-title">NPC conversation</div>
+        <div class="loop-desc">Player types freely. Claude plays the NPC — landlord, cashier, inspector — and responds in character. Score adjusts based on formality, titles, and cultural awareness.</div>
+        <div style="margin-top:8px;font-size:11px;color:#1D9E75;font-weight:500">Click to see interactive mockup →</div>
+      </div>
+      <div class="loop-card" style="cursor:pointer;border-left:3px solid #BA7517" onclick="showMech(3,null)">
+        <div class="loop-num" style="color:#BA7517">03</div>
+        <div class="loop-title">Drag & drop</div>
+        <div class="loop-desc">Sort recycling bins, bag groceries, organise Anmeldung documents. Physical German systems made interactive. Wrong placements teach the cultural rule immediately.</div>
+        <div style="margin-top:8px;font-size:11px;color:#BA7517;font-weight:500">Click to see interactive mockup →</div>
+      </div>
+      <div class="loop-card" style="cursor:pointer;border-left:3px solid #185FA5" onclick="showMech(4,null)">
+        <div class="loop-num" style="color:#185FA5">04</div>
+        <div class="loop-title">Tap mini-game</div>
+        <div class="loop-desc">Navigate real German interfaces — ticket machine, Bürgeramt form, supermarket checkout. Step-by-step decisions with real consequences, mirroring actual systems.</div>
+        <div style="margin-top:8px;font-size:11px;color:#185FA5;font-weight:500">Click to see interactive mockup →</div>
+      </div>
+      <div class="loop-card" style="cursor:pointer;border-left:3px solid #993C1D" onclick="showMech(5,null)">
+        <div class="loop-num" style="color:#993C1D">05</div>
+        <div class="loop-title">Score & AI debrief</div>
+        <div class="loop-desc">5 dimensions tracked live — rule compliance, system navigation, social awareness, communication, resilience. Claude writes a unique personal debrief at session end.</div>
+        <div style="margin-top:8px;font-size:11px;color:#993C1D;font-weight:500">Click to see interactive mockup →</div>
+      </div>
+      <div class="loop-card" style="border-left:3px solid var(--border)">
+        <div class="loop-num">06</div>
+        <div class="loop-title">Progression & unlocks</div>
+        <div class="loop-desc">New Frankfurt districts, harder scenario variants, and workplace-specific modules unlock as adaptability score increases. Multiple sessions build on each other.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL 1: MAP ── -->
+  <div class="mech-panel" id="mp1">
+    <div class="card">
+      <div class="card-label" style="display:flex;align-items:center;gap:8px">
+        <span style="background:#EEEDFE;color:#3C3489;border-radius:6px;padding:2px 8px">Mechanic 01</span>
+        Map & movement — Frankfurt Nordend
+      </div>
+      <!-- Map mockup -->
+      <div style="background:#1e1e18;border-radius:12px;height:220px;position:relative;overflow:hidden;margin-bottom:14px;cursor:crosshair" id="glMap" onclick="glWalkTo(event)">
+        <!-- streets -->
+        <div style="position:absolute;left:0;right:0;height:10px;top:47%;background:#2a2820"></div>
+        <div style="position:absolute;left:0;right:0;height:8px;top:22%;background:#252320"></div>
+        <div style="position:absolute;left:0;right:0;height:8px;top:74%;background:#252320"></div>
+        <div style="position:absolute;top:0;bottom:0;width:10px;left:27%;background:#2a2820"></div>
+        <div style="position:absolute;top:0;bottom:0;width:10px;left:58%;background:#2a2820"></div>
+        <div style="position:absolute;top:0;bottom:0;width:8px;left:82%;background:#252320"></div>
+        <!-- blocks -->
+        <div style="position:absolute;background:#252520;border-radius:3px;left:1%;top:1%;width:23%;height:19%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:30%;top:1%;width:24%;height:19%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:62%;top:1%;width:17%;height:19%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:85%;top:1%;width:13%;height:19%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:1%;top:25%;width:23%;height:19%"></div>
+        <div style="position:absolute;background:#162218;border-radius:3px;left:30%;top:25%;width:24%;height:19%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:62%;top:25%;width:17%;height:19%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:85%;top:25%;width:13%;height:19%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:1%;top:51%;width:23%;height:21%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:30%;top:51%;width:24%;height:21%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:62%;top:51%;width:17%;height:21%"></div>
+        <div style="position:absolute;background:#141c22;border-radius:3px;left:85%;top:51%;width:13%;height:21%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:1%;top:77%;width:23%;height:21%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:30%;top:77%;width:24%;height:21%"></div>
+        <div style="position:absolute;background:#252520;border-radius:3px;left:62%;top:77%;width:17%;height:21%"></div>
+        <!-- park label -->
+        <div style="position:absolute;left:31%;top:30%;font-size:7px;color:#2a5a2a;letter-spacing:.5px;font-family:sans-serif">GÜNTHERSBURGPARK</div>
+        <!-- street labels -->
+        <div style="position:absolute;left:8%;top:43%;font-size:7px;color:#3a3828;font-family:sans-serif">Oeder Weg</div>
+        <div style="position:absolute;left:34%;top:43%;font-size:7px;color:#3a3828;font-family:sans-serif">Eckenheimer Str.</div>
+        <!-- pins -->
+        <div style="position:absolute;left:20%;top:40%;transform:translate(-50%,-100%);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;z-index:5" onclick="glSelectPin(event,'hbf','S-Bahn Station — buy your ticket here','20%','42%')">
+          <div style="width:24px;height:24px;border-radius:50%;background:#1a3a8a;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 8px rgba(0,0,0,.4)">🚂</div>
+          <div style="background:rgba(30,30,24,.85);border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:2px 6px;font-size:8px;color:#c8c0b4;white-space:nowrap">S-Bahn</div>
+        </div>
+        <div style="position:absolute;left:45%;top:32%;transform:translate(-50%,-100%);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;z-index:5" onclick="glSelectPin(event,'rewe','REWE Supermarket — sort recycling before shopping','45%','34%')">
+          <div style="width:24px;height:24px;border-radius:50%;background:#1a4a2a;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 8px rgba(0,0,0,.4)">🛒</div>
+          <div style="background:rgba(30,30,24,.85);border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:2px 6px;font-size:8px;color:#c8c0b4;white-space:nowrap">REWE</div>
+        </div>
+        <div style="position:absolute;left:74%;top:42%;transform:translate(-50%,-100%);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;z-index:5" onclick="glSelectPin(event,'apt','Your Apartment — meet Herr Fischer','74%','44%')">
+          <div style="width:24px;height:24px;border-radius:50%;background:#4a1a3a;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 8px rgba(0,0,0,.4)">🏠</div>
+          <div style="background:rgba(30,30,24,.85);border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:2px 6px;font-size:8px;color:#c8c0b4;white-space:nowrap">Apartment</div>
+        </div>
+        <div style="position:absolute;left:54%;top:66%;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:2px;z-index:5">
+          <div style="width:24px;height:24px;border-radius:50%;background:#2a2a28;border:2px solid #444;display:flex;align-items:center;justify-content:center;font-size:11px;opacity:.45">🏛️</div>
+          <div style="background:rgba(30,30,24,.85);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:2px 6px;font-size:8px;color:#555;white-space:nowrap">Bürgeramt (locked)</div>
+        </div>
+        <!-- player -->
+        <div id="glPlayer" style="position:absolute;left:22%;top:58%;transform:translate(-50%,-50%);width:20px;height:20px;background:#f0c040;border-radius:50%;border:2px solid #1e1e18;display:flex;align-items:center;justify-content:center;font-size:10px;box-shadow:0 0 0 3px rgba(240,192,64,.2);transition:left .5s ease,top .5s ease;z-index:10;pointer-events:none">🧑</div>
+        <!-- legend -->
+        <div style="position:absolute;bottom:8px;left:10px;display:flex;gap:8px">
+          <div style="background:rgba(30,30,24,.75);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:3px 8px;font-size:9px;color:#a09888;display:flex;align-items:center;gap:4px"><span style="width:7px;height:7px;border-radius:50%;background:#f0c040;display:inline-block"></span>You</div>
+          <div style="background:rgba(30,30,24,.75);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:3px 8px;font-size:9px;color:#a09888">Click map to walk</div>
+        </div>
+      </div>
+      <div id="glMapHint" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px">Click anywhere on the map to walk there · Tap a pin to select a location</div>
+      <!-- feature list -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div style="padding:12px;background:#EEEDFE;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#3C3489;margin-bottom:4px">Click-to-move</div>
+          <div style="font-size:11px;color:#534AB7;line-height:1.5">Character walks to wherever player clicks. Hidden cultural discovery notes appear near landmarks.</div>
+        </div>
+        <div style="padding:12px;background:#E1F5EE;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#085041;margin-bottom:4px">Real districts</div>
+          <div style="font-size:11px;color:#1D9E75;line-height:1.5">Actual Frankfurt streets — Nordend, Sachsenhausen, HBF. Players build spatial memory before arriving.</div>
+        </div>
+        <div style="padding:12px;background:#FAEEDA;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#633806;margin-bottom:4px">Unlockable areas</div>
+          <div style="font-size:11px;color:#BA7517;line-height:1.5">Bürgeramt, hospital, workplace unlock only after earlier scenes are completed. Score gates progression.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL 2: NPC ── -->
+  <div class="mech-panel" id="mp2">
+    <div class="card">
+      <div class="card-label" style="display:flex;align-items:center;gap:8px">
+        <span style="background:#E1F5EE;color:#085041;border-radius:6px;padding:2px 8px">Mechanic 02</span>
+        NPC conversation — player types freely, AI responds
+      </div>
+      <!-- Chat mockup -->
+      <div style="background:white;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">
+        <div style="padding:11px 16px;background:#faf9f6;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:50%;background:#f0ebe0;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">👴</div>
+          <div>
+            <div style="font-size:13px;font-weight:500">Herr Fischer</div>
+            <div style="font-size:11px;color:var(--muted)">Your landlord · Frankfurt Nordend</div>
+          </div>
+          <div style="margin-left:auto;font-size:11px;color:var(--green);display:flex;align-items:center;gap:4px">
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>Online
+          </div>
+        </div>
+        <div id="glChatMsgs" style="padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-height:120px;max-height:200px;overflow-y:auto">
+          <div style="max-width:82%">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:2px;padding:0 3px">Herr Fischer</div>
+            <div style="padding:9px 13px;background:#f5f0e8;border:1px solid var(--border);border-radius:3px 10px 10px 10px;font-size:13px;line-height:1.5;color:var(--ink)">Guten Tag. I am Wolfgang Fischer. You must be the new tenant. I have the house rules here for you to sign.</div>
+          </div>
+        </div>
+        <div id="glSugRow" style="padding:6px 14px 0;display:flex;gap:6px;flex-wrap:wrap">
+          <div onclick="glSendMsg('Hey Wolfgang! Nice to meet you.')" style="background:var(--bg);border:1px solid var(--border);border-radius:100px;padding:4px 11px;font-size:11px;cursor:pointer;color:var(--ink)">Hey Wolfgang! Nice to meet you.</div>
+          <div onclick="glSendMsg('Good day, Herr Fischer. Pleased to meet you.')" style="background:var(--bg);border:1px solid var(--border);border-radius:100px;padding:4px 11px;font-size:11px;cursor:pointer;color:var(--ink)">Good day, Herr Fischer. Pleased to meet you.</div>
+          <div onclick="glSendMsg('What are the quiet hours here?')" style="background:var(--bg);border:1px solid var(--border);border-radius:100px;padding:4px 11px;font-size:11px;cursor:pointer;color:var(--ink)">What are the quiet hours here?</div>
+        </div>
+        <div style="padding:10px 14px;border-top:1px solid var(--border);margin-top:8px;display:flex;gap:8px">
+          <input id="glChatInput" type="text" placeholder="Type your reply to Herr Fischer…" style="flex:1;font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;outline:none" onkeydown="if(event.key==='Enter')glSendInput()">
+          <button onclick="glSendInput()" style="padding:8px 16px;background:var(--ink);color:white;border:none;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Send</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div style="padding:12px;background:#E1F5EE;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#085041;margin-bottom:4px">AI-powered replies</div>
+          <div style="font-size:11px;color:#1D9E75;line-height:1.5">Claude plays the NPC. Every message gets a contextual in-character reply — not a menu of preset options.</div>
+        </div>
+        <div style="padding:12px;background:#EEEDFE;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#3C3489;margin-bottom:4px">Formality scoring</div>
+          <div style="font-size:11px;color:#534AB7;line-height:1.5">Saying "Wolfgang" costs −10 social points. "Herr Fischer" earns +12. Tracked live on the score bar.</div>
+        </div>
+        <div style="padding:12px;background:#FAEEDA;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#633806;margin-bottom:4px">Multiple NPCs</div>
+          <div style="font-size:11px;color:#BA7517;line-height:1.5">Cashiers, landlords, inspectors, colleagues, doctors. Each has distinct personality and cultural expectations.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL 3: DRAG ── -->
+  <div class="mech-panel" id="mp3">
+    <div class="card">
+      <div class="card-label" style="display:flex;align-items:center;gap:8px">
+        <span style="background:#FAEEDA;color:#633806;border-radius:6px;padding:2px 8px">Mechanic 03</span>
+        Drag & drop — physical German systems made interactive
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Click items below to sort them into the correct bin:</div>
+      <!-- Bins -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+        <div id="glBinGelb" style="border:2px dashed var(--border);border-radius:10px;padding:10px 6px;text-align:center;min-height:80px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:border-color .15s">
+          <div style="font-size:18px">🟡</div>
+          <div style="font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Gelber Sack</div>
+          <div style="font-size:8px;color:#bbb">Packaging</div>
+          <div id="gbc-gelb" style="font-size:9px;background:var(--bg);border-radius:3px;padding:1px 5px;color:var(--muted);display:none"></div>
+        </div>
+        <div id="glBinPaper" style="border:2px dashed var(--border);border-radius:10px;padding:10px 6px;text-align:center;min-height:80px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:border-color .15s">
+          <div style="font-size:18px">🔵</div>
+          <div style="font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Papier</div>
+          <div style="font-size:8px;color:#bbb">Paper only</div>
+          <div id="gbc-paper" style="font-size:9px;background:var(--bg);border-radius:3px;padding:1px 5px;color:var(--muted);display:none"></div>
+        </div>
+        <div id="glBinBio" style="border:2px dashed var(--border);border-radius:10px;padding:10px 6px;text-align:center;min-height:80px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:border-color .15s">
+          <div style="font-size:18px">🟤</div>
+          <div style="font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Biotonne</div>
+          <div style="font-size:8px;color:#bbb">Organic</div>
+          <div id="gbc-bio" style="font-size:9px;background:var(--bg);border-radius:3px;padding:1px 5px;color:var(--muted);display:none"></div>
+        </div>
+        <div id="glBinRest" style="border:2px dashed var(--border);border-radius:10px;padding:10px 6px;text-align:center;min-height:80px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:border-color .15s">
+          <div style="font-size:18px">⚫</div>
+          <div style="font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Restmüll</div>
+          <div style="font-size:8px;color:#bbb">Everything else</div>
+          <div id="gbc-rest" style="font-size:9px;background:var(--bg);border-radius:3px;padding:1px 5px;color:var(--muted);display:none"></div>
+        </div>
+      </div>
+      <!-- Items -->
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;background:#faf9f6;border:1px solid var(--border);border-radius:10px;padding:12px" id="glItems">
+        <div class="gl-item" id="gli-yogurt" onclick="glPlace('yogurt','gelb','Yogurt cup')" style="background:white;border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer;transition:border-color .15s">Yogurt cup</div>
+        <div class="gl-item" id="gli-news" onclick="glPlace('news','paper','Newspaper')" style="background:white;border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer;transition:border-color .15s">Newspaper</div>
+        <div class="gl-item" id="gli-banana" onclick="glPlace('banana','bio','Banana peel')" style="background:white;border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer;transition:border-color .15s">Banana peel</div>
+        <div class="gl-item" id="gli-tissue" onclick="glPlace('tissue','rest','Used tissue')" style="background:white;border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer;transition:border-color .15s">Used tissue</div>
+        <div class="gl-item" id="gli-can" onclick="glPlace('can','gelb','Tin can')" style="background:white;border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer;transition:border-color .15s">Tin can</div>
+        <div class="gl-item" id="gli-egg" onclick="glPlace('egg','bio','Eggshell')" style="background:white;border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer;transition:border-color .15s">Eggshell</div>
+      </div>
+      <div id="glDragMsg" style="font-size:12px;color:var(--muted);margin-bottom:14px">Click an item then click the correct bin, or just click items to auto-sort correctly</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="padding:12px;background:#FAEEDA;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#633806;margin-bottom:4px">Why recycling?</div>
+          <div style="font-size:11px;color:#BA7517;line-height:1.5">Germany's system is strictly enforced. Wrong bins = written warning from the Hausverwaltung. A real consequence new arrivals don't expect.</div>
+        </div>
+        <div style="padding:12px;background:#E1F5EE;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#085041;margin-bottom:4px">Other drag scenes</div>
+          <div style="font-size:11px;color:#1D9E75;line-height:1.5">Supermarket bagging, Anmeldung document sorting, Pfand bottle return machine — all physical German systems.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL 4: TICKET ── -->
+  <div class="mech-panel" id="mp4">
+    <div class="card">
+      <div class="card-label" style="display:flex;align-items:center;gap:8px">
+        <span style="background:#E6F1FB;color:#0C447C;border-radius:6px;padding:2px 8px">Mechanic 04</span>
+        Tap mini-game — navigate real German interfaces
+      </div>
+      <!-- Ticket machine mockup -->
+      <div style="background:#0a140a;border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid #1a3a1a">
+        <div style="font-family:monospace;font-size:11px;color:#2a6a2a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;text-align:center;border-bottom:1px solid #1a3a1a;padding-bottom:10px">RMV · Rhein-Main-Verkehrsverbund</div>
+        <div id="glTPrompt" style="font-family:monospace;font-size:12px;color:#4ade80;margin-bottom:10px">&gt; SELECT TICKET TYPE</div>
+        <div id="glTOpts">
+          <div onclick="glPickTicket(this,true,'Correct — single trip for city travel within Frankfurt.')" style="border:1px solid #1a3a1a;border-radius:7px;padding:9px 13px;margin-bottom:7px;cursor:pointer;display:flex;justify-content:space-between;transition:background .15s" onmouseover="this.style.background='rgba(74,222,128,.06)'" onmouseout="this.style.background=''">
+            <span style="font-family:monospace;font-size:12px;color:#88c888">Einzelfahrt (single trip)</span><span style="font-family:monospace;font-size:12px;color:#4ade80">€3.40</span>
+          </div>
+          <div onclick="glPickTicket(this,false,'A day pass is only worth it if you plan 3+ trips today.')" style="border:1px solid #1a3a1a;border-radius:7px;padding:9px 13px;margin-bottom:7px;cursor:pointer;display:flex;justify-content:space-between;transition:background .15s" onmouseover="this.style.background='rgba(74,222,128,.06)'" onmouseout="this.style.background=''">
+            <span style="font-family:monospace;font-size:12px;color:#88c888">Tageskarte (day pass)</span><span style="font-family:monospace;font-size:12px;color:#4ade80">€8.10</span>
+          </div>
+          <div onclick="glPickTicket(this,false,'Far too expensive for a single trip into the city.')" style="border:1px solid #1a3a1a;border-radius:7px;padding:9px 13px;cursor:pointer;display:flex;justify-content:space-between;transition:background .15s" onmouseover="this.style.background='rgba(74,222,128,.06)'" onmouseout="this.style.background=''">
+            <span style="font-family:monospace;font-size:12px;color:#88c888">Wochenkarte (weekly)</span><span style="font-family:monospace;font-size:12px;color:#4ade80">€28.50</span>
+          </div>
+        </div>
+      </div>
+      <!-- Steps indicator -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div id="gts1" style="width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:var(--muted)">1</div>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <div id="gts2" style="width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:var(--muted)">2</div>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <div id="gts3" style="width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:var(--muted)">3</div>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <div id="gts4" style="width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:var(--muted)">4</div>
+      </div>
+      <div id="glTFeedback" style="font-size:12px;color:var(--muted);margin-bottom:14px;min-height:18px">Select a ticket type above</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div style="padding:12px;background:#E6F1FB;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#0C447C;margin-bottom:4px">Real machine logic</div>
+          <div style="font-size:11px;color:#185FA5;line-height:1.5">Mirrors the actual RMV interface — zone selection, passenger count, payment. Same steps, same decisions.</div>
+        </div>
+        <div style="padding:12px;background:#E1F5EE;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#085041;margin-bottom:4px">Wrong choices teach</div>
+          <div style="font-size:11px;color:#1D9E75;line-height:1.5">Picking the wrong zone or day pass shows why — before the player does it for real in Germany.</div>
+        </div>
+        <div style="padding:12px;background:#FAEEDA;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#633806;margin-bottom:4px">Other tap games</div>
+          <div style="font-size:11px;color:#BA7517;line-height:1.5">Bürgeramt registration, supermarket self-checkout, Pfand bottle machine — all real German systems.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL 5: SCORE ── -->
+  <div class="mech-panel" id="mp5">
+    <div class="card">
+      <div class="card-label" style="display:flex;align-items:center;gap:8px">
+        <span style="background:#FAECE7;color:#712B13;border-radius:6px;padding:2px 8px">Mechanic 05</span>
+        Adaptability score & AI debrief
+      </div>
+      <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px">Live score — updates after every action</div>
+      <div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:12px;width:140px;flex-shrink:0;color:var(--ink)">Rule compliance</div>
+        <div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div id="gsr1" style="height:100%;background:#1D9E75;border-radius:3px;width:72%;transition:width .8s ease"></div></div>
+        <div id="gsv1" style="font-size:12px;font-weight:500;width:28px;text-align:right;color:#1D9E75">72</div>
+      </div>
+      <div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:12px;width:140px;flex-shrink:0;color:var(--ink)">System navigation</div>
+        <div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div id="gsr2" style="height:100%;background:#BA7517;border-radius:3px;width:58%;transition:width .8s ease"></div></div>
+        <div id="gsv2" style="font-size:12px;font-weight:500;width:28px;text-align:right;color:#BA7517">58</div>
+      </div>
+      <div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:12px;width:140px;flex-shrink:0;color:var(--ink)">Social awareness</div>
+        <div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div id="gsr3" style="height:100%;background:#534AB7;border-radius:3px;width:85%;transition:width .8s ease"></div></div>
+        <div id="gsv3" style="font-size:12px;font-weight:500;width:28px;text-align:right;color:#534AB7">85</div>
+      </div>
+      <div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:12px;width:140px;flex-shrink:0;color:var(--ink)">Communication</div>
+        <div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div id="gsr4" style="height:100%;background:#993C1D;border-radius:3px;width:64%;transition:width .8s ease"></div></div>
+        <div id="gsv4" style="font-size:12px;font-weight:500;width:28px;text-align:right;color:#993C1D">64</div>
+      </div>
+      <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:12px;width:140px;flex-shrink:0;color:var(--ink)">Emotional resilience</div>
+        <div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div id="gsr5" style="height:100%;background:#185FA5;border-radius:3px;width:49%;transition:width .8s ease"></div></div>
+        <div id="gsv5" style="font-size:12px;font-weight:500;width:28px;text-align:right;color:#185FA5">49</div>
+      </div>
+      <button onclick="glAnimScores()" style="font-size:12px;margin-bottom:16px;padding:7px 16px;background:white;border:1px solid var(--border);border-radius:7px;cursor:pointer;font-family:'DM Sans',sans-serif">Simulate a scene outcome ↻</button>
+      <div style="background:white;border:1px solid var(--border);border-left:3px solid var(--gold);padding:14px 16px;margin-bottom:14px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:6px">✦ AI debrief</div>
+        <div style="font-size:13px;line-height:1.75;color:var(--muted)">Your strongest area was social awareness — you navigated all formality-based interactions with confidence. Focus next on system navigation: transport validation and the Pfand system both caught you out. In Germany, rules are rarely explained but strictly enforced.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div style="padding:12px;background:#EEEDFE;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#3C3489;margin-bottom:4px">5 dimensions, not 1</div>
+          <div style="font-size:11px;color:#534AB7;line-height:1.5">Each updated independently — NPC scenes affect social, ticket scenes affect navigation, recycling affects rules.</div>
+        </div>
+        <div style="padding:12px;background:#E1F5EE;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#085041;margin-bottom:4px">Institutional dashboard</div>
+          <div style="font-size:11px;color:#1D9E75;line-height:1.5">Migration coordinators see a full player profile — competency tags and green/amber/red breakdown per player.</div>
+        </div>
+        <div style="padding:12px;background:#FAEEDA;border-radius:8px">
+          <div style="font-size:12px;font-weight:500;color:#633806;margin-bottom:4px">AI debrief is personal</div>
+          <div style="font-size:11px;color:#BA7517;line-height:1.5">Claude reads the actual scores and writes a unique debrief every time — not a template. Different every player.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ PAGE 4: PROGRESS ══ -->
+<div class="page" id="page-progress">
+  <div class="page-eyebrow">Progress so far</div>
+  <h1>What's been built</h1>
+  <p class="lead">All of the following was built during Month 1 of the project. Each item is documented and accessible.</p>
+
+  <div class="evidence-grid">
+    <div class="ev-card">
+      <div class="ev-icon">🎮</div>
+      <div class="ev-title">Live playable game</div>
+      <div class="ev-desc">4 interaction types working: map, NPC chat, drag-and-drop, ticket machine. Score tracking, cultural feedback, AI debrief.</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <a class="ev-link" href="https://nishidin.github.io/Demo_Game/" target="_blank">↗ nishidin.github.io/Demo_Game</a>
+        <span class="ev-tag">Live</span>
+      </div>
+    </div>
+    <div class="ev-card">
+      <div class="ev-icon">🤖</div>
+      <div class="ev-title">AI integration demo</div>
+      <div class="ev-desc">Three Claude API features prototyped: adaptability report, dynamic NPC dialogue, AI scenario generator. All functional.</div>
+      <div><span class="ev-tag">Built</span></div>
+    </div>
+    <div class="ev-card">
+      <div class="ev-icon">📊</div>
+      <div class="ev-title">Analytics dashboard</div>
+      <div class="ev-desc">Month 3 feature preview — player profile, score breakdown by competency, tags (green/amber/red), key insights panel.</div>
+      <div><span class="ev-tag">Designed</span></div>
+    </div>
+    <div class="ev-card">
+      <div class="ev-icon">📋</div>
+      <div class="ev-title">Pitch deck</div>
+      <div class="ev-desc">14-slide deck covering problem, solution, game loop, technology strategy, scalability vision, and expected impact.</div>
+      <div><span class="ev-tag">Complete</span></div>
+    </div>
+    <div class="ev-card">
+      <div class="ev-icon">🗺</div>
+      <div class="ev-title">Game design document</div>
+      <div class="ev-desc">First 30 minutes designed in detail — character creation, airport, transport, supermarket, apartment, adaptability report.</div>
+      <div><span class="ev-tag">Complete</span></div>
+    </div>
+    <div class="ev-card">
+      <div class="ev-icon">🏗</div>
+      <div class="ev-title">Tech architecture</div>
+      <div class="ev-desc">Single-file HTML prototype, Claude API integration, GitHub Pages hosting, no-framework approach chosen for speed.</div>
+      <div><span class="ev-tag">Decided</span></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+/* ── MECHANIC TABS ── */
+function showMech(i, e) {
+  document.querySelectorAll('.mech-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.mech-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('mp' + i).classList.add('active');
+  document.querySelectorAll('.mech-tab')[i].classList.add('active');
+}
+
+/* ── MAP ── */
+function glWalkTo(e) {
+  const map = document.getElementById('glMap');
+  const r = map.getBoundingClientRect();
+  const x = Math.round((e.clientX - r.left) / r.width * 100);
+  const y = Math.round((e.clientY - r.top) / r.height * 100);
+  const p = document.getElementById('glPlayer');
+  p.style.left = x + '%'; p.style.top = y + '%';
+  document.getElementById('glMapHint').textContent = 'Walking to (' + x + '%, ' + y + '%)… tap a location pin to enter it';
+}
+function glSelectPin(e, id, desc, lx, ly) {
+  e.stopPropagation();
+  if (id === 'amt') return;
+  const p = document.getElementById('glPlayer');
+  p.style.left = lx; p.style.top = ly;
+  document.getElementById('glMapHint').textContent = desc;
+}
+
+/* ── NPC ── */
+const glNPCRes = {
+  formal: ['Sehr gut. I appreciate your respectful greeting. Punctuality and cleanliness are most important here. Let us proceed to sign the Hausordnung.', 'Danke. I think we will get along well. Please read the house rules carefully before signing.', 'Very good. Here are your keys. Welcome to the building, and to Frankfurt.'],
+  casual: ['I would prefer you address me as Herr Fischer. In Germany, we use titles with people we do not know personally.', 'Let us keep things professional for now. Please call me Herr Fischer.'],
+  question: ['Quiet hours are 22:00 to 07:00 daily, and all day Sunday. This is German law, not just a house rule.', 'The rent is €850 Kaltmiete plus €180 Nebenkosten for heating and water. Deposit was two months cold rent.'],
+  default: ['I see. Shall we proceed to the apartment? I have the papers ready.', 'Understood. Any other questions before we sign the Mietvertrag?']
+};
+let glNPCTurn = 0, glSugsGone = false;
+
+function glSendMsg(msg) {
+  if (!glSugsGone) { document.getElementById('glSugRow').innerHTML = ''; glSugsGone = true; }
+  const msgs = document.getElementById('glChatMsgs');
+  const pb = document.createElement('div');
+  pb.style.cssText = 'align-self:flex-end;max-width:82%';
+  pb.innerHTML = '<div style="font-size:10px;color:var(--muted);margin-bottom:2px;padding:0 3px;text-align:right">You</div><div style="padding:9px 13px;background:var(--ink);color:white;border-radius:10px 3px 10px 10px;font-size:13px;line-height:1.5">' + msg + '</div>';
+  msgs.appendChild(pb);
+  const lower = msg.toLowerCase();
+  const tooFamiliar = lower.includes('hey') || lower.includes('wolfgang') || lower.includes('hi ');
+  const formal = lower.includes('herr fischer') || lower.includes('good day') || lower.includes('pleased');
+  const isQ = msg.includes('?') || lower.includes('what') || lower.includes('how') || lower.includes('quiet') || lower.includes('rent');
+  let badge, pool;
+  if (tooFamiliar) { badge = { t: 'Social −10', bg: '#FCEBEB', c: '#A32D2D' }; pool = glNPCRes.casual; }
+  else if (formal) { badge = { t: 'Social +12', bg: '#EAF3DE', c: '#27500A' }; pool = glNPCRes.formal; }
+  else if (isQ) { badge = { t: 'Social +5', bg: '#FAEEDA', c: '#633806' }; pool = glNPCRes.question; }
+  else { badge = { t: 'Social +3', bg: '#EEEDFE', c: '#3C3489' }; pool = glNPCRes.default; }
+  const sc = document.createElement('div');
+  sc.style.cssText = 'align-self:flex-end;font-size:10px;font-weight:500;padding:2px 8px;border-radius:100px;background:' + badge.bg + ';color:' + badge.c;
+  sc.textContent = badge.t;
+  msgs.appendChild(sc);
+  setTimeout(() => {
+    const nb = document.createElement('div');
+    nb.style.cssText = 'max-width:82%';
+    nb.innerHTML = '<div style="font-size:10px;color:var(--muted);margin-bottom:2px;padding:0 3px">Herr Fischer</div><div style="padding:9px 13px;background:#f5f0e8;border:1px solid var(--border);border-radius:3px 10px 10px 10px;font-size:13px;line-height:1.5;color:var(--ink)">' + pool[Math.min(glNPCTurn, pool.length - 1)] + '</div>';
+    msgs.appendChild(nb);
+    msgs.scrollTop = 9999;
+    glNPCTurn++;
+  }, 700);
+  msgs.scrollTop = 9999;
+}
+function glSendInput() {
+  const inp = document.getElementById('glChatInput');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  glSendMsg(msg);
+}
+
+/* ── DRAG ── */
+const glItemBins = { yogurt: 'gelb', news: 'paper', banana: 'bio', tissue: 'rest', can: 'gelb', egg: 'bio' };
+let glPlaced = 0;
+function glPlace(id, bin, label) {
+  const el = document.getElementById('gli-' + id);
+  if (!el || el.dataset.placed) return;
+  el.dataset.placed = '1';
+  el.style.opacity = '.3';
+  el.style.textDecoration = 'line-through';
+  el.onclick = null;
+  const chip = document.getElementById('gbc-' + bin);
+  if (chip) { chip.textContent = label; chip.style.display = 'block'; }
+  const binEl = document.getElementById('glBin' + bin.charAt(0).toUpperCase() + bin.slice(1));
+  if (binEl) { binEl.style.borderColor = 'var(--green)'; binEl.style.borderStyle = 'solid'; }
+  glPlaced++;
+  document.getElementById('glDragMsg').textContent = glPlaced >= 6 ? '✓ All sorted correctly! Germany\'s recycling system mastered.' : glPlaced + ' of 6 sorted — keep going';
+  document.getElementById('glDragMsg').style.color = glPlaced >= 6 ? 'var(--green)' : 'var(--muted)';
+}
+
+/* ── TICKET ── */
+let glTicketStep = 0;
+const glTicketSteps = [
+  { prompt: '> SELECT TICKET TYPE', opts: [
+    { t: 'Einzelfahrt (single trip)', p: '€3.40', ok: true, msg: 'Correct — single trip for city travel within Frankfurt.' },
+    { t: 'Tageskarte (day pass)', p: '€8.10', ok: false, msg: 'A day pass is only worth it for 3+ trips today.' },
+    { t: 'Wochenkarte (weekly)', p: '€28.50', ok: false, msg: 'Far too expensive for a single trip.' }
+  ]},
+  { prompt: '> SELECT ZONE', opts: [
+    { t: 'Zone 50 — Frankfurt City', p: '', ok: true, msg: 'Correct — you are travelling within Frankfurt city limits.' },
+    { t: 'Zone 50+51 — Extended', p: '+suburbs', ok: false, msg: 'Zone 51 covers suburbs. You only need zone 50.' },
+    { t: 'Gesamtnetz — All zones', p: 'Entire RMV', ok: false, msg: 'All zones covers the whole region. Too expensive.' }
+  ]},
+  { prompt: '> NUMBER OF PASSENGERS', opts: [
+    { t: '1 Erwachsener (adult)', p: '', ok: true, msg: 'Correct.' },
+    { t: '2 passengers', p: '', ok: false, msg: 'You are travelling alone.' }
+  ]},
+  { prompt: '> PAYMENT METHOD', opts: [
+    { t: 'EC/Girocard (contactless)', p: '', ok: true, msg: '✓ Ticket dispensed — remember to validate at the yellow Entwerter!' },
+    { t: 'Barzahlung (cash)', p: '', ok: true, msg: '✓ Ticket dispensed — remember to validate at the yellow Entwerter!' },
+    { t: 'Abbrechen (cancel)', p: '', ok: false, msg: 'You need the ticket — do not cancel!' }
+  ]}
+];
+
+function glPickTicket(el, correct, msg) {
+  const fb = document.getElementById('glTFeedback');
+  if (correct) {
+    el.style.borderColor = '#4ade80'; el.style.background = 'rgba(74,222,128,.08)';
+    el.parentElement.querySelectorAll('[onclick]').forEach(o => o.onclick = null);
+    fb.textContent = msg; fb.style.color = 'var(--green)';
+    glTicketStep++;
+    const dot = document.getElementById('gts' + glTicketStep);
+    if (dot) { dot.style.background = 'var(--green)'; dot.style.color = 'white'; dot.style.borderColor = 'var(--green)'; }
+    if (glTicketStep < glTicketSteps.length) {
+      setTimeout(() => {
+        const d = glTicketSteps[glTicketStep];
+        document.getElementById('glTPrompt').textContent = d.prompt;
+        document.getElementById('glTOpts').innerHTML = d.opts.map(o =>
+          `<div onclick="glPickTicket(this,${o.ok},'${o.msg}')" style="border:1px solid #1a3a1a;border-radius:7px;padding:9px 13px;margin-bottom:7px;cursor:pointer;display:flex;justify-content:space-between" onmouseover="this.style.background='rgba(74,222,128,.06)'" onmouseout="this.style.background=''"><span style="font-family:monospace;font-size:12px;color:#88c888">${o.t}</span><span style="font-family:monospace;font-size:12px;color:#4ade80">${o.p}</span></div>`
+        ).join('');
+        fb.textContent = 'Select an option'; fb.style.color = 'var(--muted)';
+      }, 500);
+    } else {
+      document.getElementById('glTPrompt').textContent = '> TRANSACTION COMPLETE';
+      document.getElementById('glTOpts').innerHTML = '<div style="font-family:monospace;font-size:12px;color:#4ade80;text-align:center;padding:12px">✓ TICKET DISPENSED — validate before boarding!</div>';
+    }
+  } else {
+    el.style.borderColor = '#f87171'; el.style.background = 'rgba(239,68,68,.06)';
+    fb.textContent = msg; fb.style.color = 'var(--red)';
+    setTimeout(() => { el.style.borderColor = '#1a3a1a'; el.style.background = ''; fb.style.color = 'var(--muted)'; }, 1800);
+  }
+}
+
+/* ── SCORE ANIMATE ── */
+const glScoreBases = [72, 58, 85, 64, 49];
+function glAnimScores() {
+  [1,2,3,4,5].forEach((i) => {
+    const delta = Math.floor(Math.random() * 18) - 7;
+    const newVal = Math.min(100, Math.max(0, glScoreBases[i-1] + delta));
+    glScoreBases[i-1] = newVal;
+    document.getElementById('gsr' + i).style.width = newVal + '%';
+    document.getElementById('gsv' + i).textContent = newVal;
+  });
+}
+</script>
+</body>
+</html>
