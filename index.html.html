@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arriving Germany — v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f0e8; --card: #ffffff; --ink: #1a1a18; --muted: #7a7870;
+  --border: #e0dbd0; --gold: #b8860b; --gold-light: #f0c040;
+  --green: #2d6a4f; --green-bg: #eaf4ee; --red: #b5341c; --red-bg: #fdf0ec;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; padding: 32px 20px 80px; display: flex; justify-content: center; }
+.game { width: 100%; max-width: 560px; }
+
+/* ── SHARED ── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+.eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.eyebrow::before { content: ''; display: inline-block; width: 16px; height: 1px; background: var(--muted); }
+.desc { font-size: 14px; line-height: 1.7; color: var(--muted); margin-bottom: 24px; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 14px; }
+.card-pad { padding: 20px 22px; }
+
+.btn-primary { width: 100%; padding: 14px; background: var(--ink); color: white; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s; letter-spacing: 0.02em; }
+.btn-primary:hover { opacity: .85; }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+.btn-outline { width: 100%; padding: 13px; background: white; color: var(--ink); border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: border-color .15s; margin-top: 10px; }
+.btn-outline:hover { border-color: var(--ink); }
+
+.tag { display: inline-flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 100px; padding: 5px 12px; font-size: 12px; color: var(--muted); }
+
+/* ── SCORE BAR ── */
+.scorebar { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; display: none; gap: 20px; }
+.scorebar.show { display: flex; }
+.score-item { flex: 1; }
+.score-name { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 4px; }
+.score-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 2px; background: var(--ink); transition: width .5s ease; }
+.score-val { font-size: 11px; font-weight: 500; margin-top: 3px; }
+
+/* ── PROGRESS ── */
+.progress { display: flex; gap: 6px; margin-bottom: 20px; }
+.prog-dot { height: 4px; flex: 1; border-radius: 2px; background: var(--border); }
+.prog-dot.done { background: var(--ink); }
+.prog-dot.active { background: var(--gold); }
+
+/* ── INTRO ── */
+#screen-intro .hero { background: var(--ink); border-radius: 16px; padding: 36px 30px; color: white; margin-bottom: 14px; }
+#screen-intro .hero h1 { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 800; letter-spacing: -2px; line-height: 1; margin-bottom: 14px; }
+#screen-intro .hero h1 span { color: var(--gold-light); }
+#screen-intro .hero p { font-size: 14px; line-height: 1.7; color: #b8b4ae; margin-bottom: 24px; }
+.scene-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.scene-pill { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #c8c4be; }
+.hero-btn { width: 100%; padding: 14px; background: var(--gold-light); color: var(--ink); border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; cursor: pointer; transition: transform .15s; }
+.hero-btn:hover { transform: translateY(-1px); }
+
+/* ═══ SCREEN 1: MAP ══════════════════════════════════════ */
+.map-wrap { position: relative; background: #ddd8cc; border-radius: 14px; overflow: hidden; height: 280px; margin-bottom: 14px; border: 1px solid var(--border); }
+.map-bg { width: 100%; height: 100%; object-fit: cover; }
+.map-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(5, 1fr); }
+
+/* Street blocks — visual only */
+.map-block { border: 1px solid rgba(255,255,255,.15); }
+
+/* Location pins */
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  transition: transform .15s;
+  z-index: 2;
+}
+.map-pin:hover { transform: translate(-50%, -105%); }
+.map-pin.visited .pin-circle { background: var(--green); }
+.map-pin.active-pin .pin-circle { background: var(--gold); box-shadow: 0 0 0 4px rgba(184,134,11,.25); }
+.pin-circle { width: 32px; height: 32px; border-radius: 50%; background: var(--ink); border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+.pin-label { background: white; border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 500; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.15); color: var(--ink); }
+
+.map-legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* ═══ SCREEN 2: NPC CONVERSATION ═════════════════════════ */
+.chat-window { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 14px; }
+.chat-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: #faf9f6; }
+.chat-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--ink); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.chat-name { font-weight: 500; font-size: 14px; }
+.chat-role { font-size: 12px; color: var(--muted); }
+.chat-messages { padding: 16px; min-height: 200px; max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 80%; display: flex; flex-direction: column; gap: 3px; }
+.msg.npc { align-self: flex-start; }
+.msg.player { align-self: flex-end; }
+.msg-bubble { padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.55; }
+.msg.npc .msg-bubble { background: var(--bg); border: 1px solid var(--border); border-radius: 4px 12px 12px 12px; color: var(--ink); }
+.msg.player .msg-bubble { background: var(--ink); color: white; border-radius: 12px 4px 12px 12px; }
+.msg-sender { font-size: 11px; color: var(--muted); padding: 0 4px; }
+.typing-indicator { display: none; align-items: center; gap: 4px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px 12px 12px 12px; width: fit-content; }
+.typing-indicator.show { display: flex; }
+.typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: bounce .8s infinite; }
+.typing-dot:nth-child(2) { animation-delay: .15s; }
+.typing-dot:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+.chat-input-row { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+.chat-input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; background: white; color: var(--ink); outline: none; transition: border-color .15s; }
+.chat-input:focus { border-color: var(--ink); }
+.chat-send { padding: 10px 18px; background: var(--ink); color: white; border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s; flex-shrink: 0; }
+.chat-send:hover { opacity: .85; }
+.chat-send:disabled { opacity: .4; cursor: not-allowed; }
+
+.suggestion-chips { display: flex; gap: 7px; flex-wrap: wrap; padding: 0 16px 12px; }
+.chip { background: var(--bg); border: 1px solid var(--border); border-radius: 100px; padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--ink); transition: border-color .15s; }
+.chip:hover { border-color: var(--ink); }
+
+/* ═══ SCREEN 3: DRAG & DROP ══════════════════════════════ */
+.bins-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.bin {
+  border: 2px dashed var(--border); border-radius: 12px; padding: 10px 8px;
+  text-align: center; min-height: 90px;
+  transition: border-color .15s, background .15s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.bin.over { border-color: var(--gold); background: #fdf9ee; }
+.bin.correct { border-color: var(--green); background: var(--green-bg); }
+.bin.wrong-flash { border-color: var(--red); background: var(--red-bg); }
+.bin-icon { font-size: 22px; }
+.bin-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.bin-items { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-top: 4px; }
+.bin-item-chip { font-size: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px; color: var(--ink); }
+
+.items-pile { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; padding: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; min-height: 60px; }
+.drag-item {
+  padding: 8px 14px; background: white; border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 13px; cursor: grab; user-select: none;
+  transition: transform .15s, box-shadow .15s, opacity .15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.drag-item:hover { border-color: var(--ink); transform: translateY(-1px); }
+.drag-item.dragging { opacity: .5; cursor: grabbing; }
+.drag-item.placed { display: none; }
+
+/* ═══ SCREEN 4: TAP MINI-GAME (Ticket Machine) ═══════════ */
+.machine-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 14px; }
+.machine-screen { background: #1a2f1a; padding: 20px; font-family: 'DM Mono', monospace; }
+.machine-screen-title { color: #4ade80; font-size: 13px; letter-spacing: .05em; margin-bottom: 16px; text-align: center; font-weight: 500; }
+.machine-option {
+  border: 1px solid #2d4a2d; border-radius: 8px; padding: 11px 16px;
+  margin-bottom: 8px; cursor: pointer; transition: background .15s, border-color .15s;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.machine-option:hover { background: rgba(74,222,128,.08); border-color: #4ade80; }
+.machine-option.selected { background: rgba(74,222,128,.12); border-color: #4ade80; }
+.machine-option.wrong { background: rgba(239,68,68,.1); border-color: #f87171; animation: shake .3s; }
+.opt-text { color: #a0c8a0; font-size: 13px; }
+.opt-price { color: #4ade80; font-size: 13px; font-weight: 500; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+.machine-body { padding: 16px 18px; }
+.machine-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.step-dot { width: 24px; height: 24px; border-radius: 50%; background: var(--bg); border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: var(--muted); flex-shrink: 0; }
+.step-dot.done { background: var(--ink); color: white; border-color: var(--ink); }
+.step-dot.active { background: var(--gold-light); border-color: var(--gold); color: var(--ink); }
+.step-line { flex: 1; height: 1px; background: var(--border); }
+.machine-hint { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+/* ── FEEDBACK BANNER ── */
+.feedback { border-radius: 12px; padding: 14px 18px; font-size: 14px; line-height: 1.65; margin-bottom: 14px; display: none; border: 1px solid; }
+.feedback.show { display: block; }
+.feedback.good { background: var(--green-bg); border-color: #9fd3b8; color: var(--green); }
+.feedback.bad { background: var(--red-bg); border-color: #f0b4a0; color: var(--red); }
+.feedback strong { font-weight: 500; display: block; margin-bottom: 3px; }
+
+/* ── REPORT ── */
+.report-hero { background: var(--ink); border-radius: 16px; padding: 28px; margin-bottom: 14px; color: white; }
+.report-hero h2 { color: white; margin-bottom: 6px; }
+.report-hero p { font-size: 14px; color: #b0aca6; }
+.report-scores { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px 22px; margin-bottom: 14px; }
+.rs-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.rs-row:last-child { border-bottom: none; }
+.rs-label { font-size: 13px; width: 155px; flex-shrink: 0; }
+.rs-track { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.rs-fill { height: 100%; border-radius: 3px; background: var(--ink); }
+.rs-pct { font-size: 13px; font-weight: 500; width: 34px; text-align: right; }
+.ai-card { background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--gold); border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; }
+.ai-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+.ai-text { font-size: 14px; line-height: 1.75; }
+.spin { width: 13px; height: 13px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="game">
+
+  <!-- SCORE BAR -->
+  <div class="scorebar" id="scorebar">
+    <div class="score-item">
+      <div class="score-name">Rule compliance</div>
+      <div class="score-track"><div class="score-fill" id="bar-rule" style="width:50%"></div></div>
+      <div class="score-val" id="val-rule">50</div>
+    </div>
+    <div class="score-item">
+      <div class="score-name">Navigation</div>
+      <div class="score-track"><div class="score-fill" id="bar-nav" style="width:50%"></div></div>
+      <div class="score-val" id="val-nav">50</div>
+    </div>
+    <div class="score-item">
+      <div class="score-name">Social</div>
+      <div class="score-track"><div class="score-fill" id="bar-social" style="width:50%"></div></div>
+      <div class="score-val" id="val-social">50</div>
+    </div>
+  </div>
+
+  <!-- ══ INTRO ══ -->
+  <div class="screen active" id="screen-intro">
+    <div class="hero">
+      <h1>Arriving<br><span>Germany</span></h1>
+      <p>Four different types of gameplay — a city map, a live conversation, a sorting mini-game, and an interactive ticket machine. All in one file.</p>
+      <div class="scene-pills">
+        <div class="scene-pill">🗺 Map exploration</div>
+        <div class="scene-pill">💬 NPC conversation</div>
+        <div class="scene-pill">🗑 Drag & drop</div>
+        <div class="scene-pill">🎫 Tap mini-game</div>
+      </div>
+      <button class="hero-btn" onclick="go('map')">Start exploring →</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 1: MAP ══ -->
+  <div class="screen" id="screen-map">
+    <div class="progress" id="prog-map">
+      <div class="prog-dot active"></div>
+      <div class="prog-dot"></div>
+      <div class="prog-dot"></div>
+      <div class="prog-dot"></div>
+    </div>
+    <div class="eyebrow">Scene 1 — City map</div>
+    <h2>Frankfurt Nordend</h2>
+    <p class="desc">You just landed. Tap a location to start your first task there.</p>
+
+    <div class="map-wrap" id="map-wrap">
+      <!-- SVG city map -->
+      <svg width="100%" height="100%" viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg">
+        <!-- Streets -->
+        <rect width="560" height="280" fill="#e8e2d8"/>
+        <!-- Blocks -->
+        <rect x="0" y="0" width="120" height="80" fill="#d8d2c6" rx="0"/>
+        <rect x="130" y="0" width="180" height="80" fill="#d8d2c6"/>
+        <rect x="320" y="0" width="240" height="80" fill="#d8d2c6"/>
+        <rect x="0" y="90" width="200" height="90" fill="#d8d2c6"/>
+        <rect x="210" y="90" width="150" height="90" fill="#d8d2c6"/>
+        <rect x="370" y="90" width="190" height="90" fill="#d8d2c6"/>
+        <rect x="0" y="190" width="160" height="90" fill="#d8d2c6"/>
+        <rect x="170" y="190" width="200" height="90" fill="#d8d2c6"/>
+        <rect x="380" y="190" width="180" height="90" fill="#d8d2c6"/>
+        <!-- Park -->
+        <rect x="210" y="90" width="150" height="90" fill="#c8dcb8" rx="4"/>
+        <text x="285" y="142" text-anchor="middle" font-size="10" fill="#5a8a4a" font-family="sans-serif">Günthersburgpark</text>
+        <!-- Street labels -->
+        <text x="65" y="88" text-anchor="middle" font-size="9" fill="#9a9488" font-family="sans-serif">Oeder Weg</text>
+        <text x="280" y="88" text-anchor="middle" font-size="9" fill="#9a9488" font-family="sans-serif">Eckenheimer Landstr.</text>
+        <text x="280" y="188" text-anchor="middle" font-size="9" fill="#9a9488" font-family="sans-serif">Glauburgstraße</text>
+      </svg>
+
+      <!-- Map pins -->
+      <div class="map-pin" id="pin-hbf" style="left:18%;top:72%" onclick="selectPin('hbf')">
+        <div class="pin-circle">🚂</div>
+        <div class="pin-label">Hauptbahnhof</div>
+      </div>
+      <div class="map-pin" id="pin-rewe" style="left:52%;top:48%" onclick="selectPin('rewe')">
+        <div class="pin-circle">🛒</div>
+        <div class="pin-label">REWE</div>
+      </div>
+      <div class="map-pin" id="pin-apt" style="left:80%;top:72%" onclick="selectPin('apt')">
+        <div class="pin-circle">🏠</div>
+        <div class="pin-label">Your apartment</div>
+      </div>
+    </div>
+
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--ink)"></div> To visit</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Visited</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div> Selected</div>
+    </div>
+
+    <div class="card" id="map-detail" style="display:none">
+      <div class="card-pad">
+        <div style="font-weight:500;margin-bottom:6px" id="map-detail-title"></div>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:16px" id="map-detail-desc"></div>
+        <button class="btn-primary" id="map-go-btn" onclick="goFromMap()"></button>
+      </div>
+    </div>
+
+    <div id="map-msg" style="font-size:14px;color:var(--muted);text-align:center;padding:8px 0">Tap a location to begin</div>
+  </div>
+
+  <!-- ══ SCREEN 2: NPC CONVERSATION ══ -->
+  <div class="screen" id="screen-npc">
+    <div class="progress">
+      <div class="prog-dot done"></div>
+      <div class="prog-dot active"></div>
+      <div class="prog-dot"></div>
+      <div class="prog-dot"></div>
+    </div>
+    <div class="eyebrow">Scene 2 — Live conversation</div>
+    <h2>Meet Herr Fischer</h2>
+    <p class="desc">Your landlord. Speak to him in English — he understands. Remember: German landlords value formality with strangers.</p>
+
+    <div class="chat-window">
+      <div class="chat-header">
+        <div class="chat-avatar">👴</div>
+        <div>
+          <div class="chat-name">Herr Fischer</div>
+          <div class="chat-role">Your landlord · Nordend, Frankfurt</div>
+        </div>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg npc">
+          <div class="msg-sender">Herr Fischer</div>
+          <div class="msg-bubble">Guten Tag. You must be the new tenant. I am Wolfgang Fischer. I have the house rules here for you to sign.</div>
+        </div>
+      </div>
+      <div class="suggestion-chips" id="chips">
+        <div class="chip" onclick="useChip(this)">Hey Wolfgang, nice to meet you!</div>
+        <div class="chip" onclick="useChip(this)">Good day, Herr Fischer. Thank you for coming.</div>
+        <div class="chip" onclick="useChip(this)">Can I call you Wolfgang?</div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" type="text" placeholder="Type your reply…" onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="chat-send" id="chat-send" onclick="sendMsg()">Send</button>
+      </div>
+    </div>
+
+    <button class="btn-outline" id="npc-continue" style="display:none" onclick="go('drag')">Continue to next scene →</button>
+  </div>
+
+  <!-- ══ SCREEN 3: DRAG & DROP ══ -->
+  <div class="screen" id="screen-drag">
+    <div class="progress">
+      <div class="prog-dot done"></div>
+      <div class="prog-dot done"></div>
+      <div class="prog-dot active"></div>
+      <div class="prog-dot"></div>
+    </div>
+    <div class="eyebrow">Scene 3 — Sorting mini-game</div>
+    <h2>Sort the recycling</h2>
+    <p class="desc">Germany's recycling system is strict. Drag each item into the correct bin. Wrong placements cost you points.</p>
+
+    <div class="bins-row">
+      <div class="bin" id="bin-gelb" ondragover="allowDrop(event)" ondrop="dropItem(event,'gelb')">
+        <div class="bin-icon">🟡</div>
+        <div class="bin-label">Gelber Sack</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">Packaging</div>
+        <div class="bin-items" id="bin-gelb-items"></div>
+      </div>
+      <div class="bin" id="bin-paper" ondragover="allowDrop(event)" ondrop="dropItem(event,'paper')">
+        <div class="bin-icon">🔵</div>
+        <div class="bin-label">Papier</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">Paper only</div>
+        <div class="bin-items" id="bin-paper-items"></div>
+      </div>
+      <div class="bin" id="bin-bio" ondragover="allowDrop(event)" ondrop="dropItem(event,'bio')">
+        <div class="bin-icon">🟤</div>
+        <div class="bin-label">Biotonne</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">Organic</div>
+        <div class="bin-items" id="bin-bio-items"></div>
+      </div>
+      <div class="bin" id="bin-rest" ondragover="allowDrop(event)" ondrop="dropItem(event,'rest')">
+        <div class="bin-icon">⚫</div>
+        <div class="bin-label">Restmüll</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">Everything else</div>
+        <div class="bin-items" id="bin-rest-items"></div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500;text-transform:uppercase;letter-spacing:.06em">Drag these items:</div>
+    <div class="items-pile" id="items-pile"></div>
+
+    <div class="feedback good" id="drag-feedback-good">
+      <strong>All sorted correctly!</strong>
+      German recycling is serious — wrong bin can mean a warning from your landlord or the building manager. You nailed it.
+    </div>
+    <div class="feedback bad" id="drag-feedback-bad">
+      <strong id="drag-bad-msg"></strong>
+    </div>
+
+    <button class="btn-primary" id="drag-continue" style="display:none" onclick="go('ticket')">Continue →</button>
+  </div>
+
+  <!-- ══ SCREEN 4: TICKET MACHINE ══ -->
+  <div class="screen" id="screen-ticket">
+    <div class="progress">
+      <div class="prog-dot done"></div>
+      <div class="prog-dot done"></div>
+      <div class="prog-dot done"></div>
+      <div class="prog-dot active"></div>
+    </div>
+    <div class="eyebrow">Scene 4 — Tap mini-game</div>
+    <h2>Buy a train ticket</h2>
+    <p class="desc">Navigate the S-Bahn ticket machine. Make the right choices at each step.</p>
+
+    <div class="machine-wrap">
+      <div class="machine-screen">
+        <div class="machine-screen-title" id="machine-title">RMV Ticket Machine</div>
+        <div id="machine-options"></div>
+      </div>
+      <div class="machine-body">
+        <div class="machine-progress">
+          <div class="step-dot active" id="sdot-0">1</div>
+          <div class="step-line"></div>
+          <div class="step-dot" id="sdot-1">2</div>
+          <div class="step-line"></div>
+          <div class="step-dot" id="sdot-2">3</div>
+          <div class="step-line"></div>
+          <div class="step-dot" id="sdot-3">4</div>
+        </div>
+        <div class="machine-hint" id="machine-hint"></div>
+      </div>
+    </div>
+
+    <div class="feedback good" id="ticket-good" style="display:none">
+      <strong>Ticket purchased correctly!</strong>
+      Remember: after buying, you still need to validate at the yellow stamping machine on the platform before boarding.
+    </div>
+    <div class="feedback bad" id="ticket-bad" style="display:none">
+      <strong id="ticket-bad-msg"></strong>
+    </div>
+
+    <button class="btn-primary" id="ticket-continue" style="display:none" onclick="showReport()">See my results →</button>
+  </div>
+
+  <!-- ══ REPORT ══ -->
+  <div class="screen" id="screen-report">
+    <div class="report-hero">
+      <div class="eyebrow" style="color:var(--gold-light)">Session complete</div>
+      <h2>Your adaptability profile</h2>
+      <p>Based on all four interactions</p>
+    </div>
+    <div class="report-scores" id="report-scores"></div>
+    <div class="ai-card">
+      <div class="ai-label">✦ AI debrief</div>
+      <div class="ai-text" id="ai-text"><span class="spin"></span>Writing your personal debrief…</div>
+    </div>
+    <button class="btn-outline" onclick="location.reload()">Play again ↺</button>
+  </div>
+
+</div><!-- /game -->
+
+<script>
+// ─── SCORE STATE ───────────────────────────────────────
+const score = { rule:50, nav:50, social:50 };
+function clamp(v){ return Math.min(100,Math.max(0,v)); }
+function addScore(r,n,s){
+  score.rule=clamp(score.rule+r);
+  score.nav=clamp(score.nav+n);
+  score.social=clamp(score.social+s);
+  ['rule','nav','social'].forEach(k=>{
+    document.getElementById('bar-'+k).style.width=score[k]+'%';
+    document.getElementById('val-'+k).textContent=score[k];
+  });
+}
+function go(screen){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+screen).classList.add('active');
+  document.getElementById('scorebar').classList.add('show');
+  window.scrollTo(0,0);
+}
+
+// ─── MAP ───────────────────────────────────────────────
+const MAP_LOCS = {
+  hbf:  { title:'Frankfurt Hauptbahnhof', desc:'Buy your S-Bahn ticket and get to your apartment.', btn:'Go to ticket machine', next:'ticket' },
+  rewe: { title:'REWE Supermarket',       desc:'Sort your groceries and recycling correctly.',      btn:'Enter supermarket',   next:'drag'   },
+  apt:  { title:'Your apartment',          desc:'Meet Herr Fischer, your new landlord.',            btn:'Ring the doorbell',   next:'npc'    }
+};
+let selectedPin = null;
+function selectPin(id){
+  document.querySelectorAll('.map-pin').forEach(p=>p.classList.remove('active-pin'));
+  document.getElementById('pin-'+id).classList.add('active-pin');
+  selectedPin = id;
+  const loc = MAP_LOCS[id];
+  document.getElementById('map-detail-title').textContent = loc.title;
+  document.getElementById('map-detail-desc').textContent = loc.desc;
+  document.getElementById('map-go-btn').textContent = loc.btn+' →';
+  document.getElementById('map-detail').style.display='block';
+  document.getElementById('map-msg').style.display='none';
+  addScore(0,5,0);
+}
+function goFromMap(){
+  if(!selectedPin) return;
+  document.getElementById('pin-'+selectedPin).classList.add('visited');
+  addScore(0,10,0);
+  go(MAP_LOCS[selectedPin].next);
+}
+
+// ─── NPC CONVERSATION (simulated — demo mode) ──────────
+let npcTurns = 0;
+
+const NPC_RESPONSES = {
+  formal: [
+    "Sehr gut. I appreciate the respectful greeting. Please, come in — I will show you the apartment and go through the house rules. Punctuality and cleanliness are most important here.",
+    "Yes, that is correct. In Germany, we take these things seriously. I think you will be a good tenant — you already understand the importance of formality.",
+    "Very well. I think we understand each other well. Please sign here and I will give you the keys. Welcome to Frankfurt, and to the building."
+  ],
+  casual: [
+    "I prefer to be addressed as Herr Fischer, if you do not mind. We do not know each other well enough for first names yet. This is quite normal in Germany.",
+    "I see you are perhaps not yet familiar with German customs. Here, we use titles — Herr or Frau — until we know someone personally. Please remember this with your colleagues too.",
+    "I hope you will settle in well. One last thing — in Germany, it is considered respectful to keep a certain professional distance until invited otherwise. The neighbours will also appreciate this."
+  ],
+  question: [
+    "That is a fair question. The bins are in the courtyard — yellow bag for packaging, blue for paper, brown for organic waste. Please sort carefully or there will be a fine from the building.",
+    "The heating is included in your rent, but only from October to April. For any repairs, please contact me in writing first — not by phone. This is important.",
+    "The quiet hours — Ruhezeit — are from 10pm to 7am, and all day Sunday. No loud music, no drilling. This is German law, not just a house rule."
+  ],
+  default: [
+    "I understand. As I said, the house rules are quite straightforward. Please read them carefully before signing — especially the section about guests and noise.",
+    "Yes, yes. These things are important to establish early. I have been a landlord for twenty years and a clear agreement at the start prevents problems later.",
+    "Good. I think we have covered the essentials. Do you have any other questions before we finalise the paperwork?"
+  ]
+};
+
+function getSimulatedReply(msg) {
+  const lower = msg.toLowerCase();
+  const tooFamiliar = lower.includes('hey') || lower.includes('wolfgang') || lower.includes('dude') || lower.includes('bro') || lower.includes('hi ');
+  const isQuestion = msg.includes('?') || lower.includes('what') || lower.includes('how') || lower.includes('where') || lower.includes('when') || lower.includes('can i');
+  const isFormal = lower.includes('herr fischer') || lower.includes('good day') || lower.includes('good morning') || lower.includes('pleased') || lower.includes('thank you');
+
+  let pool;
+  if(tooFamiliar) pool = NPC_RESPONSES.casual;
+  else if(isFormal) pool = NPC_RESPONSES.formal;
+  else if(isQuestion) pool = NPC_RESPONSES.question;
+  else pool = NPC_RESPONSES.default;
+
+  const idx = Math.min(npcTurns, pool.length - 1);
+  return pool[idx];
+}
+
+async function sendMsg(){
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value='';
+  document.getElementById('chips').innerHTML='';
+  document.getElementById('chat-send').disabled=true;
+  addPlayerBubble(msg);
+
+  const lower = msg.toLowerCase();
+  const tooFamiliar = lower.includes('hey') || lower.includes('wolfgang') || lower.includes('dude') || lower.includes('bro');
+  if(tooFamiliar) addScore(-5,0,-10); else addScore(5,0,10);
+
+  showTyping(true);
+  const reply = getSimulatedReply(msg);
+  const delay = 800 + reply.length * 18;
+
+  setTimeout(()=>{
+    showTyping(false);
+    addNpcBubble(reply);
+    npcTurns++;
+    if(npcTurns>=3){
+      setTimeout(()=>{
+        document.getElementById('npc-continue').style.display='block';
+        document.getElementById('chat-send').disabled=true;
+        document.getElementById('chat-input').disabled=true;
+        document.getElementById('chat-input').placeholder='Conversation ended';
+      },600);
+    } else {
+      document.getElementById('chat-send').disabled=false;
+    }
+  }, delay);
+}
+
+
+function addPlayerBubble(text){
+  const el = document.createElement('div');
+  el.className='msg player';
+  el.innerHTML=`<div class="msg-sender" style="text-align:right">You</div><div class="msg-bubble">${text}</div>`;
+  document.getElementById('chat-messages').appendChild(el);
+  document.getElementById('chat-messages').scrollTop=9999;
+}
+function addNpcBubble(text){
+  const el = document.createElement('div');
+  el.className='msg npc';
+  el.innerHTML=`<div class="msg-sender">Herr Fischer</div><div class="msg-bubble">${text}</div>`;
+  document.getElementById('chat-messages').appendChild(el);
+  document.getElementById('chat-messages').scrollTop=9999;
+}
+function showTyping(show){
+  let t = document.getElementById('typing');
+  if(!t){
+    t=document.createElement('div');
+    t.id='typing';
+    t.className='typing-indicator';
+    t.innerHTML='<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+    document.getElementById('chat-messages').appendChild(t);
+  }
+  t.classList.toggle('show',show);
+  document.getElementById('chat-messages').scrollTop=9999;
+}
+function useChip(chip){
+  document.getElementById('chat-input').value=chip.textContent;
+  sendMsg();
+}
+
+// ─── DRAG & DROP ───────────────────────────────────────
+const ITEMS = [
+  {id:'yogurt',  label:'Yogurt cup',      bin:'gelb'},
+  {id:'news',    label:'Newspaper',       bin:'paper'},
+  {id:'banana',  label:'Banana peel',     bin:'bio'},
+  {id:'can',     label:'Tin can',         bin:'gelb'},
+  {id:'receipt', label:'Receipt',         bin:'paper'},
+  {id:'tissue',  label:'Used tissue',     bin:'rest'},
+  {id:'eggshell',label:'Eggshell',        bin:'bio'},
+  {id:'mirror',  label:'Broken mirror',   bin:'rest'},
+];
+
+function initDrag(){
+  const pile = document.getElementById('items-pile');
+  pile.innerHTML='';
+  ITEMS.forEach(item=>{
+    const el=document.createElement('div');
+    el.className='drag-item';
+    el.draggable=true;
+    el.id='item-'+item.id;
+    el.textContent=item.label;
+    el.addEventListener('dragstart',e=>{
+      e.dataTransfer.setData('text/plain',item.id);
+      setTimeout(()=>el.classList.add('dragging'),0);
+    });
+    el.addEventListener('dragend',()=>el.classList.remove('dragging'));
+    pile.appendChild(el);
+  });
+}
+initDrag();
+
+function allowDrop(e){ e.preventDefault(); e.currentTarget.classList.add('over'); }
+document.querySelectorAll('.bin').forEach(b=>{
+  b.addEventListener('dragleave',()=>b.classList.remove('over'));
+});
+
+function dropItem(e, binId){
+  e.preventDefault();
+  const bin = document.getElementById('bin-'+binId);
+  bin.classList.remove('over');
+  const itemId = e.dataTransfer.getData('text/plain');
+  const item = ITEMS.find(i=>i.id===itemId);
+  if(!item) return;
+  const el = document.getElementById('item-'+itemId);
+  if(!el || el.classList.contains('placed')) return;
+
+  if(item.bin===binId){
+    el.classList.add('placed');
+    addScore(5,0,5);
+    const chip=document.createElement('div');
+    chip.className='bin-item-chip';
+    chip.textContent=item.label;
+    document.getElementById('bin-'+binId+'-items').appendChild(chip);
+    bin.classList.add('correct');
+    setTimeout(()=>bin.classList.remove('correct'),800);
+    checkDragComplete();
+  } else {
+    addScore(-5,0,-5);
+    bin.classList.add('wrong-flash');
+    el.classList.add('dragging');
+    setTimeout(()=>{ bin.classList.remove('wrong-flash'); el.classList.remove('dragging'); },400);
+    document.getElementById('drag-bad-msg').textContent=`Not quite — ${item.label} doesn't go in that bin. Try another one.`;
+    document.getElementById('drag-feedback-bad').classList.add('show');
+    setTimeout(()=>document.getElementById('drag-feedback-bad').classList.remove('show'),2000);
+  }
+}
+function checkDragComplete(){
+  const remaining = document.querySelectorAll('.drag-item:not(.placed)').length;
+  if(remaining===0){
+    document.getElementById('drag-feedback-good').classList.add('show');
+    document.getElementById('drag-continue').style.display='block';
+  }
+}
+
+// ─── TICKET MACHINE ────────────────────────────────────
+const STEPS = [
+  {
+    title:'Select ticket type',
+    hint:'You need to travel within Frankfurt city limits.',
+    options:[
+      {text:'Single trip (Einzelfahrt)', price:'€3.40', correct:true},
+      {text:'Day pass (Tageskarte)', price:'€8.10', correct:false, msg:"A day pass costs more — only worth it if you plan 3+ trips today."},
+      {text:'Weekly pass (Wochenkarte)', price:'€28.50', correct:false, msg:"You only need one trip today. A weekly pass is overkill right now."},
+    ]
+  },
+  {
+    title:'Select zone',
+    hint:'You are travelling within Frankfurt city — that is zones 50.',
+    options:[
+      {text:'Zone 50 (City)', price:'Frankfurt only', correct:true},
+      {text:'Zone 50+51 (Extended)', price:'+suburbs', correct:false, msg:"Zone 51 covers the suburbs outside Frankfurt. You only need zone 50 for the city."},
+      {text:'All zones', price:'Entire RMV network', correct:false, msg:"All zones is for travelling across the entire RMV network — far too expensive for a city trip."},
+    ]
+  },
+  {
+    title:'Number of passengers',
+    hint:'You are travelling alone.',
+    options:[
+      {text:'1 passenger', price:'', correct:true},
+      {text:'2 passengers', price:'', correct:false, msg:"You are travelling alone — 1 passenger is correct."},
+      {text:'Group (5 people)', price:'', correct:false, msg:"You are alone. Group tickets are only for 5+ people travelling together."},
+    ]
+  },
+  {
+    title:'Confirm payment',
+    hint:'Review your ticket and pay.',
+    options:[
+      {text:'Pay by card (EC/Girocard)', price:'Contactless', correct:true},
+      {text:'Pay by cash', price:'Insert coins/notes', correct:true},
+      {text:'Cancel and exit', price:'', correct:false, msg:"You need the ticket — cancelling means you travel without one!"},
+    ]
+  }
+];
+let ticketStep=0, ticketErrors=0;
+
+function renderTicketStep(){
+  const s=STEPS[ticketStep];
+  document.getElementById('machine-title').textContent=s.title;
+  document.getElementById('machine-hint').textContent=s.hint;
+  const opts=document.getElementById('machine-options');
+  opts.innerHTML='';
+  s.options.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='machine-option';
+    d.innerHTML=`<span class="opt-text">${o.text}</span><span class="opt-price">${o.price}</span>`;
+    d.onclick=()=>pickTicketOption(o, d);
+    opts.appendChild(d);
+  });
+  for(let i=0;i<4;i++){
+    const dot=document.getElementById('sdot-'+i);
+    dot.className='step-dot'+(i<ticketStep?' done':i===ticketStep?' active':'');
+  }
+}
+renderTicketStep();
+
+function pickTicketOption(opt, el){
+  if(opt.correct){
+    el.classList.add('selected');
+    document.querySelectorAll('.machine-option').forEach(o=>o.onclick=null);
+    addScore(10,10,0);
+    ticketStep++;
+    if(ticketStep>=STEPS.length){
+      setTimeout(()=>{
+        document.getElementById('ticket-good').style.display='block';
+        document.getElementById('ticket-continue').style.display='block';
+        document.getElementById('machine-options').innerHTML='<div style="color:#4ade80;text-align:center;padding:16px;font-size:14px">✓ Ticket dispensed</div>';
+        document.getElementById('machine-title').textContent='Thank you!';
+        document.getElementById('machine-hint').textContent='Collect your ticket and remember to validate it.';
+      },400);
+    } else {
+      setTimeout(renderTicketStep,600);
+    }
+  } else {
+    el.classList.add('wrong');
+    addScore(-5,-5,0);
+    ticketErrors++;
+    document.getElementById('ticket-bad').style.display='block';
+    document.getElementById('ticket-bad-msg').textContent=opt.msg;
+    setTimeout(()=>{ el.classList.remove('wrong'); document.getElementById('ticket-bad').style.display='none'; },2000);
+  }
+}
+
+// ─── REPORT ────────────────────────────────────────────
+function showReport(){
+  go('report');
+  const labels={rule:'Rule compliance',nav:'System navigation',social:'Social awareness'};
+  document.getElementById('report-scores').innerHTML=Object.entries(labels).map(([k,l])=>`
+    <div class="rs-row">
+      <div class="rs-label">${l}</div>
+      <div class="rs-track"><div class="rs-fill" style="width:${score[k]}%"></div></div>
+      <div class="rs-pct">${score[k]}%</div>
+    </div>`).join('');
+  getDebrief();
+}
+async function getDebrief(){
+  const el=document.getElementById('ai-text');
+  await new Promise(r=>setTimeout(r,1200));
+
+  const strongest = Object.entries(score).sort((a,b)=>b[1]-a[1])[0];
+  const weakest = Object.entries(score).sort((a,b)=>a[1]-b[1])[0];
+  const labelMap = { rule:'rule compliance', nav:'system navigation', social:'social awareness' };
+  const tipMap = {
+    rule: "Remember: Germany has very explicit rules — from recycling bins to transport validation — that are rarely explained but strictly enforced. When in doubt, look for signs or ask.",
+    nav: "German public systems (transport, bureaucracy, shopping) reward preparation. Always look up how something works before you need to use it.",
+    social: "Germans value formal distance with strangers — using titles, firm handshakes, and measured language. Warmth comes after trust is established, not before."
+  };
+
+  const strongLabel = labelMap[strongest[0]];
+  const weakLabel = labelMap[weakest[0]];
+  const tip = tipMap[weakest[0]];
+  const strongScore = strongest[1];
+
+  let opening;
+  if(strongScore >= 75) opening = `You showed real strength in ${strongLabel} — your instincts are already well-tuned for life in Germany.`;
+  else if(strongScore >= 60) opening = `Your best area was ${strongLabel}, which is a solid foundation to build on.`;
+  else opening = `This was a challenging session — your strongest area was ${strongLabel}, which gives you a starting point.`;
+
+  el.textContent = `${opening} The area to focus on next is ${weakLabel} — this came up in multiple scenes and will matter in daily life. ${tip}`;
+}
+</script>
+</body>
+</html>
